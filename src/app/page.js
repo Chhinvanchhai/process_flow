@@ -1,101 +1,110 @@
-import Image from "next/image";
 
-export default function Home() {
+'use client'
+import React, { useState, useCallback } from "react";
+import ReactFlow, {
+  Controls,
+  Background,
+  Handle,
+  addEdge,
+  useNodesState,
+  useEdgesState
+} from "reactflow";
+import "reactflow/dist/style.css";
+
+const nodeStyles = "bg-white shadow-md rounded-xl p-4 border w-56 cursor-pointer";
+
+const CustomNode = ({ data, isActive, onClick }) => (
+  <div 
+    className={`${nodeStyles} ${isActive ? 'border-2 border-blue-500' : ''}`} 
+    onClick={() => onClick(data)}
+  >
+    <p className="font-semibold">{data.label}</p>
+    <p className="text-xs text-gray-500">{data.name}</p>
+    <p className="text-xs text-gray-500">Due: {data.dueDate}</p>
+    {data.status && (
+      <span className={`text-xs px-2 py-1 rounded-full ${data.statusColor}`}>{data.status}</span>
+    )}
+    <Handle type="source" position="right" />
+    <Handle type="target" position="left" />
+  </div>
+);
+
+const initialNodes = [
+  { id: "1", type: "custom", data: { label: "Approval by CEO", name: "Avery Milago", dueDate: "Today", status: "✅ Approved", statusColor: "bg-green-100 text-green-700" }, position: { x: 50, y: 50 } },
+  { id: "2", type: "custom", data: { label: "Informed when approved", name: "Michael Cane", dueDate: "May 11", status: "🟡 In progress", statusColor: "bg-yellow-100 text-yellow-700" }, position: { x: 400, y: 50 } },
+  { id: "3", type: "custom", data: { label: "Executed by", name: "Jessica Douglas", dueDate: "May 12", status: "🔴 Not started", statusColor: "bg-red-100 text-red-700" }, position: { x: 800, y: 50 } },
+];
+
+const initialEdges = [
+  { id: "e1-2", source: "1", target: "2", label: "Approval Granted" },
+  { id: "e2-3", source: "2", target: "3", label: "Processing" },
+];
+
+const WorkflowUI = () => {
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [activeNode, setActiveNode] = useState(null);
+  const [newNodeLabel, setNewNodeLabel] = useState("");
+  const [newNodeName, setNewNodeName] = useState("");
+  const [newNodeDueDate, setNewNodeDueDate] = useState("");
+
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+
+  const addNode = () => {
+    const newId = (nodes.length + 1).toString();
+    const newNode = {
+      id: newId,
+      type: "custom",
+      data: { label: newNodeLabel, name: newNodeName, dueDate: newNodeDueDate, status: "🟡 In progress", statusColor: "bg-yellow-100 text-yellow-700" },
+      position: { x: Math.random() * 600, y: Math.random() * 400 },
+    };
+    setNodes([...nodes, newNode]);
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="h-screen flex flex-col bg-gray-50">
+      <header className="bg-white shadow p-4 flex justify-between items-center">
+        <button className="text-gray-600">⬅ Back</button>
+        <h1 className="text-lg font-semibold">Builder</h1>
+        <h1 className="text-lg font-semibold">From Design</h1>
+        <button className="text-gray-600">More</button>
+      </header>
+      <div className="flex flex-1">
+        <div className="flex-1 p-6 relative">
+          <ReactFlow
+            nodes={nodes.map(node => ({ ...node, data: { ...node.data, isActive: activeNode?.id === node.id } }))}
+            edges={edges}
+            nodeTypes={{ custom: (props) => <CustomNode {...props} onClick={setActiveNode} isActive={activeNode?.id === props.id} /> }}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            fitView
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <Controls />
+            <Background variant="dots" gap={12} size={1} />
+          </ReactFlow>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="w-80 bg-white p-6 shadow-lg border-l">
+          <h3 className="font-semibold mb-4 text-lg">Details</h3>
+          {activeNode ? (
+            <>
+              <p><strong>Activity:</strong> {activeNode.data.label}</p>
+              <p><strong>Name:</strong> {activeNode.data.name}</p>
+              <p><strong>Due Date:</strong> {activeNode.data.dueDate}</p>
+              <p><strong>Status:</strong> {activeNode.data.status}</p>
+            </>
+          ) : (
+            <p>Select an activity to view details.</p>
+          )}
+          <h3 className="font-semibold mt-6">Add New Activity</h3>
+          <input className="w-full p-2 border rounded mt-2" placeholder="Label" value={newNodeLabel} onChange={e => setNewNodeLabel(e.target.value)} />
+          <input className="w-full p-2 border rounded mt-2" placeholder="Name" value={newNodeName} onChange={e => setNewNodeName(e.target.value)} />
+          <input className="w-full p-2 border rounded mt-2" placeholder="Due Date" value={newNodeDueDate} onChange={e => setNewNodeDueDate(e.target.value)} />
+          <button className="mt-4 w-full bg-blue-500 text-white p-2 rounded" onClick={addNode}>Add Activity</button>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default WorkflowUI;
