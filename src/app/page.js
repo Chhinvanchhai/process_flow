@@ -10,6 +10,8 @@ import ReactFlow, {
   useEdgesState
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { v4 as uuidv4 } from 'uuid';
+
 
 const nodeStyles = "bg-white shadow-md rounded-xl p-4 border w-56 cursor-pointer";
 
@@ -47,9 +49,62 @@ const WorkflowUI = () => {
   const [newNodeLabel, setNewNodeLabel] = useState("");
   const [newNodeName, setNewNodeName] = useState("");
   const [newNodeDueDate, setNewNodeDueDate] = useState("");
+  const [role, setRole] = useState("");
+  const [wfName, setWfName] = useState("");
 
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
+  const saveWorkflow = async () => {
+    const workflowData = {
+      name: 'My Workflow', // Replace with dynamic name
+      description: 'Workflow description', // Replace with dynamic description
+      created_by:  1, // Replace with the logged-in user's ID
+      nodes: nodes.map(node => ({
+        id: node.id,
+        type: node.type,
+        position: node.position,
+        data: node.data,
+      })),
+      edges: edges.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        label: edge.label,
+      })),
+    };
+  
+    try {
+      const response = await fetch('/api/workflows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(workflowData),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Workflow saved successfully!', data);
+      } else {
+        console.error('Failed to save workflow');
+      }
+    } catch (error) {
+      console.error('Error saving workflow:', error);
+    }
+  };
+
+  const fetchWorkflow = async (workflowId) => {
+    try {
+      const response = await fetch(`/api/workflows/${workflowId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setNodes(data.nodes);
+        setEdges(data.edges);
+      } else {
+        console.error('Failed to fetch workflow');
+      }
+    } catch (error) {
+      console.error('Error fetching workflow:', error);
+    }
+  };
   const addNode = () => {
     const newId = (nodes.length + 1).toString();
     const newNode = {
@@ -65,8 +120,7 @@ const WorkflowUI = () => {
     <div className="h-screen flex flex-col bg-gray-50">
       <header className="bg-white shadow p-4 flex justify-between items-center">
         <button className="text-gray-600">⬅ Back</button>
-        <h1 className="text-lg font-semibold">Builder</h1>
-        <h1 className="text-lg font-semibold">From Design</h1>
+        <h1 className="text-lg font-semibold">Workflow Design</h1>
         <button className="text-gray-600">More</button>
       </header>
       <div className="flex flex-1">
@@ -83,9 +137,12 @@ const WorkflowUI = () => {
             <Controls />
             <Background variant="dots" gap={12} size={1} />
           </ReactFlow>
+   
         </div>
         <div className="w-80 bg-white p-6 shadow-lg border-l">
-          <h3 className="font-semibold mb-4 text-lg">Details</h3>
+        <h3 className="font-semibold mt-6">Workflow Name</h3>
+          <input className="w-full p-2 border rounded mt-2" placeholder="Name" value={wfName} onChange={e => setWfName(e.target.value)} />
+          <h4 className="font-semibold mb-4 text-lg mt-3">Details</h4>
           {activeNode ? (
             <>
               <p><strong>Activity:</strong> {activeNode.data.label}</p>
@@ -96,11 +153,17 @@ const WorkflowUI = () => {
           ) : (
             <p>Select an activity to view details.</p>
           )}
-          <h3 className="font-semibold mt-6">Add New Activity</h3>
+        
+          <h5 className="font-semibold mt-6">Add New Activity</h5>
           <input className="w-full p-2 border rounded mt-2" placeholder="Label" value={newNodeLabel} onChange={e => setNewNodeLabel(e.target.value)} />
           <input className="w-full p-2 border rounded mt-2" placeholder="Name" value={newNodeName} onChange={e => setNewNodeName(e.target.value)} />
           <input className="w-full p-2 border rounded mt-2" placeholder="Due Date" value={newNodeDueDate} onChange={e => setNewNodeDueDate(e.target.value)} />
+          <input className="w-full p-2 border rounded mt-2" placeholder="Roles" value={role} onChange={e => setRole(e.target.value)} />
           <button className="mt-4 w-full bg-blue-500 text-white p-2 rounded" onClick={addNode}>Add Activity</button>
+
+          <button className="mt-4 w-full bg-green-500 text-white p-2 rounded" onClick={saveWorkflow}>
+            Save
+          </button>
         </div>
       </div>
     </div>

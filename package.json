@@ -15,10 +15,12 @@
     "font-awesome": "^4.7.0",
     "formiojs": "^4.21.6",
     "next": "15.1.7",
+    "pg": "^8.13.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "reactflow": "^11.11.4",
-    "test_flow": "file:"
+    "test_flow": "file:",
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "postcss": "^8",
